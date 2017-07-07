@@ -39,17 +39,6 @@ namespace amClient
             return pid;
         }
 
-        private static string GetActiveApplicationName()
-        {
-            Int32 hwnd = 0;
-            hwnd = GetForegroundWindow();
-            string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
-            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
-
-            //return new string[] { appProcessName, appExePath, appExeName };
-            return appProcessName;
-        }
 
         #endregion
 
@@ -108,24 +97,22 @@ namespace amClient
         {
             //Log(string.Format("KeyPress \t\t {0}\n", e.KeyChar));
 
+            Int32 hwnd = 0;
+            hwnd = GetForegroundWindow();
+            //string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
+            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+
             var monitor = new amModel();
-            monitor.amModelId = GetActiveApplicationName();
-            monitor.KeyLogCatch = e.KeyChar.ToString();
+            monitor.amModelId = Guid.NewGuid().ToString();
+            //monitor.appProcessName = appProcessName;
+            monitor.appExePath = appExePath;
+            monitor.appExeName = appExeName;
+            //monitor.KeyLogCatch = e.KeyChar.ToString()
+            monitor.InputClickedCounter = 1;
             monitor.InputType = "Keyboard";
             monitor.TimeStamp = DateTime.Now;
             monitor.userID = "HWK";
-
-            if (appGlobalCounter.ContainsKey(monitor.amModelId))
-            {
-                var count = appGlobalCounter[monitor.amModelId];
-                appGlobalCounter.Remove(monitor.amModelId);
-                appGlobalCounter.Add(monitor.amModelId, count);
-            }
-            else
-            {
-                appGlobalCounter.Add(monitor.amModelId, 1);
-            }
-
 
             CreateMonitoringAsync(monitor);
         }
@@ -134,9 +121,19 @@ namespace amClient
         {
             //Log(string.Format("MouseClick \t\t {0}\n", e.Button));
 
+            Int32 hwnd = 0;
+            hwnd = GetForegroundWindow();
+            //string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
+            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+
             var monitor = new amModel();
-            monitor.amModelId = GetActiveApplicationName();
-            monitor.KeyLogCatch = e.Button.ToString();
+            monitor.amModelId = Guid.NewGuid().ToString();
+            //monitor.appProcessName = appProcessName;
+            monitor.appExePath = appExePath;
+            monitor.appExeName = appExeName;
+            //monitor.KeyLogCatch = e.Button.ToString();
+            ///monitor.InputClickedCounter = 1;
             monitor.InputType = "Mouse";
             monitor.TimeStamp = DateTime.Now;
             monitor.userID = "HWK";
