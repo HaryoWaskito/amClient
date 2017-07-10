@@ -97,11 +97,14 @@ namespace amClient
         {
             //Log(string.Format("KeyPress \t\t {0}\n", e.KeyChar));
 
-            Int32 hwnd = 0;
-            hwnd = GetForegroundWindow();
-            //string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
-            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+            //Int32 hwnd = 0;
+            //hwnd = GetForegroundWindow();
+            ////string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+            //string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
+            //string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+
+            string appExePath = Guid.NewGuid().ToString() + "appExePathKeyboardTest";
+            string appExeName = Guid.NewGuid().ToString() + "appExeNameKeyboardTest";
 
             var monitor = new amModel();
             monitor.amModelId = Guid.NewGuid().ToString();
@@ -121,11 +124,14 @@ namespace amClient
         {
             //Log(string.Format("MouseClick \t\t {0}\n", e.Button));
 
-            Int32 hwnd = 0;
-            hwnd = GetForegroundWindow();
+            //Int32 hwnd = 0;
+            //hwnd = GetForegroundWindow();
             //string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
-            string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+            //string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
+            //string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+
+            string appExePath = Guid.NewGuid().ToString() + "appExePathKeyboardTest";
+            string appExeName = Guid.NewGuid().ToString() + "appExeNameKeyboardTest";
 
             var monitor = new amModel();
             monitor.amModelId = Guid.NewGuid().ToString();
@@ -133,7 +139,7 @@ namespace amClient
             monitor.appExePath = appExePath;
             monitor.appExeName = appExeName;
             //monitor.KeyLogCatch = e.Button.ToString();
-            ///monitor.InputClickedCounter = 1;
+            monitor.InputClickedCounter = 1;
             monitor.InputType = "Mouse";
             monitor.TimeStamp = DateTime.Now;
             monitor.userID = "HWK";
