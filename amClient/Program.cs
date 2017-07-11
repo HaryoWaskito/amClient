@@ -95,63 +95,52 @@ namespace amClient
 
         private static void HookManager_KeyPress(object sender, KeyPressEventArgs e)
         {
-            //Log(string.Format("KeyPress \t\t {0}\n", e.KeyChar));
+            try
+            {
+                Int32 hwnd = 0;
+                hwnd = GetForegroundWindow();
+                string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-            //Int32 hwnd = 0;
-            //hwnd = GetForegroundWindow();
-            ////string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            //string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
-            //string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+                var monitor = new amModel();
+                monitor.amModelId = Guid.NewGuid().ToString();
+                monitor.ApplicationName = appProcessName;
+                monitor.InputType = "Keyboard";
+                monitor.KeyStrokeCount = 1;
+                monitor.MouseClickCount = 0;
+                monitor.StartTime = DateTime.Now;
+                monitor.EndTime = DateTime.Now;
 
-            string appExePath = Guid.NewGuid().ToString() + "appExePathKeyboardTest";
-            string appExeName = Guid.NewGuid().ToString() + "appExeNameKeyboardTest";
+                CreateMonitoringAsync(monitor);
+            }
+            catch (Exception ex)
+            {
 
-            var monitor = new amModel();
-            monitor.amModelId = Guid.NewGuid().ToString();
-            //monitor.appProcessName = appProcessName;
-            monitor.appExePath = appExePath;
-            monitor.appExeName = appExeName;
-            //monitor.KeyLogCatch = e.KeyChar.ToString()
-            monitor.InputClickedCounter = 1;
-            monitor.InputType = "Keyboard";
-            monitor.TimeStamp = DateTime.Now;
-            monitor.userID = "HWK";
-
-            CreateMonitoringAsync(monitor);
+            }
         }
 
         private static void OnMouseClick(object sender, MouseEventArgs e)
         {
-            //Log(string.Format("MouseClick \t\t {0}\n", e.Button));
+            try
+            {
+                Int32 hwnd = 0;
+                hwnd = GetForegroundWindow();
+                string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-            //Int32 hwnd = 0;
-            //hwnd = GetForegroundWindow();
-            //string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            //string appExePath = Process.GetProcessById(GetWindowProcessID(hwnd)).MainModule.FileName;
-            //string appExeName = appExePath.Substring(appExePath.LastIndexOf(@"\") + 1);
+                var monitor = new amModel();
+                monitor.amModelId = Guid.NewGuid().ToString();
+                monitor.ApplicationName = appProcessName;
+                monitor.InputType = "Mouse";
+                monitor.KeyStrokeCount = 0;
+                monitor.MouseClickCount = 1;
+                monitor.StartTime = DateTime.Now;
+                monitor.EndTime = DateTime.Now;
 
-            string appExePath = Guid.NewGuid().ToString() + "appExePathKeyboardTest";
-            string appExeName = Guid.NewGuid().ToString() + "appExeNameKeyboardTest";
+                CreateMonitoringAsync(monitor);
+            }
+            catch (Exception ex)
+            {
 
-            var monitor = new amModel();
-            monitor.amModelId = Guid.NewGuid().ToString();
-            //monitor.appProcessName = appProcessName;
-            monitor.appExePath = appExePath;
-            monitor.appExeName = appExeName;
-            //monitor.KeyLogCatch = e.Button.ToString();
-            monitor.InputClickedCounter = 1;
-            monitor.InputType = "Mouse";
-            monitor.TimeStamp = DateTime.Now;
-            monitor.userID = "HWK";
-
-            CreateMonitoringAsync(monitor);
-        }
-
-        private static void Log(string text)
-        {
-            //if (IsDisposed) return;
-            //textBoxLog.AppendText(text);
-            //textBoxLog.ScrollToCaret();
+            }
         }
 
         #region To Send Data Using Rest API
@@ -179,7 +168,7 @@ namespace amClient
 
         static async Task<Uri> CreateMonitoringAsync(amModel monitor)
         {
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/Create", monitor);
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/Process", monitor);
             response.EnsureSuccessStatusCode();
 
             // Return the URI of the created resource.
