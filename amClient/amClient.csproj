@@ -69,6 +69,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="amCapture.cs" />
     <Compile Include="amModel.cs" />
     <Compile Include="ScreenCapture.cs" />
     <Compile Include="Program.cs" />

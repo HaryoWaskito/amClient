@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 
 namespace amClient
 {
@@ -16,12 +17,27 @@ namespace amClient
             return CaptureWindow(User32.GetDesktopWindow());
         }
 
+        public string CaptureScreenByteArrayString(ImageFormat format)
+        {
+            var image = CaptureWindow(User32.GetDesktopWindow());
+            using (MemoryStream ms = new MemoryStream())
+            {
+                image.Save(ms, format);
+                byte[] imageBytes = ms.ToArray();
+
+                string base64String = Convert.ToBase64String(imageBytes);
+
+                return base64String;
+            }
+
+        }
+
         /// <summary>
         /// Creates an Image object containing a screen shot of a specific window
         /// </summary>
         /// <param name="handle">The handle to the window. (In windows forms, this is obtained by the Handle property)</param>
         /// <returns></returns>
-        public Image CaptureWindow(IntPtr handle)
+        private Image CaptureWindow(IntPtr handle)
         {
             // get te hDC of the target window
             IntPtr hdcSrc = User32.GetWindowDC(handle);
@@ -57,7 +73,7 @@ namespace amClient
         /// <param name="handle"></param>
         /// <param name="filename"></param>
         /// <param name="format"></param>
-        public void CaptureWindowToFile(IntPtr handle, string filename, ImageFormat format)
+        private void CaptureWindowToFile(IntPtr handle, string filename, ImageFormat format)
         {
             Image img = CaptureWindow(handle);
             img.Save(filename, format);
@@ -68,7 +84,7 @@ namespace amClient
         /// </summary>
         /// <param name="filename"></param>
         /// <param name="format"></param>
-        public void CaptureScreenToFile(string filename, ImageFormat format)
+        private void CaptureScreenToFile(string filename, ImageFormat format)
         {
             Image img = CaptureScreen();
             img.Save(filename, format);

