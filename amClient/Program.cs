@@ -180,7 +180,7 @@ namespace amClient
                     monitor.MouseClickCount = 0;
                     monitor.StartTime = DateTime.Now;
                     monitor.EndTime = DateTime.Now;
-                    monitor.IsSuccessSendToServer = false;
+                    monitor.IsSuccessSendToServer = true;
 
                     monitoringList.Add(monitor);
                 }
