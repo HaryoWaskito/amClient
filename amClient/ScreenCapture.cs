@@ -17,7 +17,7 @@ namespace amClient
             return CaptureWindow(User32.GetDesktopWindow());
         }
 
-        public string CaptureScreenByteArrayString(ImageFormat format)
+        public byte[] CaptureScreenByteArrayString(ImageFormat format)
         {
             var image = CaptureWindow(User32.GetDesktopWindow());
             using (MemoryStream ms = new MemoryStream())
@@ -27,9 +27,9 @@ namespace amClient
 
                 string base64String = Convert.ToBase64String(imageBytes);
 
-                return base64String;
+                //return base64String;
+                return imageBytes;
             }
-
         }
 
         /// <summary>

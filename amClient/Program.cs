@@ -77,13 +77,13 @@ namespace amClient
 
             SubscribeGlobal();
 
-            SendScreenCapture();
-            //System.Timers.Timer aTimer = new System.Timers.Timer();
-            //aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-            //aTimer.Interval = int.MaxValue;
-            //aTimer.Enabled = true;
+            //SendScreenCapture();
+            System.Timers.Timer aTimer = new System.Timers.Timer();
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 60000;
+            aTimer.Enabled = true;
 
-            Application.Run();            
+            Application.Run();
         }
 
         private static void OnTimedEvent(object sender, ElapsedEventArgs e)
@@ -244,7 +244,7 @@ namespace amClient
             }
             catch (Exception ex)
             {
-                
+
             }
         }
 
@@ -283,15 +283,15 @@ namespace amClient
             Int32 hwnd = 0;
             hwnd = GetForegroundWindow();
             string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
-            
+
             var capture = new amCapture();
             capture.amCaptureId = Guid.NewGuid().ToString();
             capture.SessionID = 0;
             capture.ActivityName = appProcessName;
-            capture.ImageBtyeArrayString = new ScreenCapture().CaptureScreenByteArrayString(System.Drawing.Imaging.ImageFormat.Jpeg);
+            capture.Image = new ScreenCapture().CaptureScreenByteArrayString(System.Drawing.Imaging.ImageFormat.Jpeg);
             capture.CaptureScreenDate = DateTime.Now;
             capture.IsSuccessSendToServer = false;
-            
+
             HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessCaptureImage", capture);
             response.EnsureSuccessStatusCode();
 
