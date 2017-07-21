@@ -17,12 +17,10 @@ namespace amClient
 {
     class Program
     {
-        private static bool running = false;
-
         private static string ACTIVITY_TYPE_APPLICATION = "Application";
         private static string ACTIVITY_TYPE_URL = "URL";
 
-        private static string localHost = string.Empty;
+        private static string LOCALHOST = string.Empty;
 
         private static List<amModel> monitoringList = new List<amModel>();
         private static List<amCapture> screenCaptureList = new List<amCapture>();
@@ -58,10 +56,10 @@ namespace amClient
 
         public static void Main()
         {
-            //localHost = "http://localhost:5000";
+            //LOCALHOST = "http://localhost:5000";
             //Console.Title = "Testing";
 
-            localHost = string.Format("http://localhost:{0}", GetLocalHostPort());
+            LOCALHOST = string.Format("http://localhost:{0}", GetLocalHostPort());           
 
             HideConsole();
 
@@ -224,7 +222,6 @@ namespace amClient
                 {
                     var monitor = monitoringList.Where(a => a.ActivityName == appProcessName).OrderByDescending(b => b.StartTime).FirstOrDefault();
                     monitor.MouseClickCount++;
-                    //monitor.InputKey = string.Concat(monitor.InputKey, e.KeyChar.ToString());
                     monitor.EndTime = DateTime.Now;
                 }
                 else
@@ -247,7 +244,6 @@ namespace amClient
 
                     monitoringList.Add(monitor);
                 }
-                //CreateMonitoringAsync(monitor);
             }
             catch (Exception ex)
             {
@@ -263,12 +259,6 @@ namespace amClient
                 hwnd = GetForegroundWindow();
                 string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-                //if (screenCaptureList.Count > 0)
-                //{
-                //    var lastScreen = screenCaptureList.OrderByDescending(ord => ord.CaptureScreenDate).Single()
-                //}
-                //if (screenCaptureList.OrderByDescending(ord=>ord.CaptureScreenDate).Single((capture => capture.ActivityName == appProcessName))
-                //{
                 var capture = new amCapture();
                 capture.amCaptureId = Guid.NewGuid().ToString();
                 capture.SessionID = 0;
@@ -282,12 +272,6 @@ namespace amClient
                 SendScreenCapture(screenCaptureList);
 
                 screenCaptureList = new List<amCapture>();
-                //}
-                //else if (screenCaptureList.Count > 0)
-                //{
-                //    SendScreenCapture(screenCaptureList);
-                //    screenCaptureList = new List<amCapture>();
-                //}
             }
             catch (Exception ex)
             {
@@ -301,7 +285,7 @@ namespace amClient
 
         static async Task RunAsync()
         {
-            client.BaseAddress = new Uri(localHost);
+            client.BaseAddress = new Uri(LOCALHOST);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -309,6 +293,7 @@ namespace amClient
         static async Task<Uri> SendMonitoringAsync(List<amModel> monitor)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessKeyLog", monitor);
+
             response.EnsureSuccessStatusCode();
 
             return response.Headers.Location;
@@ -316,8 +301,8 @@ namespace amClient
 
         static async Task<Uri> SendScreenCapture(List<amCapture> screenMonitor)
         {
-
             HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessCaptureImage", screenMonitor);
+
             response.EnsureSuccessStatusCode();
 
             return response.Headers.Location;
