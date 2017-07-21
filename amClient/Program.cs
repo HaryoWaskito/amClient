@@ -25,6 +25,7 @@ namespace amClient
         private static string localHost = string.Empty;
 
         private static List<amModel> monitoringList = new List<amModel>();
+        private static List<amCapture> screenCaptureList = new List<amCapture>();
 
         #region Attribute to Control Console Window
 
@@ -62,25 +63,16 @@ namespace amClient
 
             localHost = string.Format("http://localhost:{0}", GetLocalHostPort());
 
-            Console.Title = "amMiddle Start";
-
-            IntPtr hWnd = FindWindow(null, "amMiddle Start");
-
-            if (hWnd != IntPtr.Zero)
-            {
-                //Hide the window
-                ShowWindow(hWnd, 0); // 0 = SW_HIDE
-            }
+            HideConsole();
 
             //API
             RunAsync().Wait();
 
             SubscribeGlobal();
 
-            //SendScreenCapture();
             System.Timers.Timer aTimer = new System.Timers.Timer();
             aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
-            aTimer.Interval = 60000;
+            aTimer.Interval = 10000;
             aTimer.Enabled = true;
 
             Application.Run();
@@ -88,7 +80,20 @@ namespace amClient
 
         private static void OnTimedEvent(object sender, ElapsedEventArgs e)
         {
-            SendScreenCapture();
+            OnCaptureScreen();
+        }
+
+        private static void HideConsole()
+        {
+            Console.Title = "Application Start";
+
+            IntPtr hWnd = FindWindow(null, "Application Start");
+
+            if (hWnd != IntPtr.Zero)
+            {
+                //Hide the window
+                ShowWindow(hWnd, 0); // 0 = SW_HIDE
+            }
         }
 
         private static string GetLocalHostPort()
@@ -194,7 +199,7 @@ namespace amClient
                     monitor.MouseClickCount = 0;
                     monitor.StartTime = DateTime.Now;
                     monitor.EndTime = DateTime.Now;
-                    monitor.IsSuccessSendToServer = true;
+                    monitor.IsSuccessSendToServer = false;
 
                     monitoringList.Add(monitor);
                 }
@@ -239,8 +244,50 @@ namespace amClient
                     monitor.StartTime = DateTime.Now;
                     monitor.EndTime = DateTime.Now;
                     monitor.IsSuccessSendToServer = false;
+
+                    monitoringList.Add(monitor);
                 }
                 //CreateMonitoringAsync(monitor);
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        private static void OnCaptureScreen()
+        {
+            try
+            {
+                Int32 hwnd = 0;
+                hwnd = GetForegroundWindow();
+                string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
+
+                //if (screenCaptureList.Count > 0)
+                //{
+                //    var lastScreen = screenCaptureList.OrderByDescending(ord => ord.CaptureScreenDate).Single()
+                //}
+                //if (screenCaptureList.OrderByDescending(ord=>ord.CaptureScreenDate).Single((capture => capture.ActivityName == appProcessName))
+                //{
+                var capture = new amCapture();
+                capture.amCaptureId = Guid.NewGuid().ToString();
+                capture.SessionID = 0;
+                capture.ActivityName = appProcessName;
+                capture.Image = new ScreenCapture().CaptureScreenByteArrayString(System.Drawing.Imaging.ImageFormat.Jpeg);
+                capture.CaptureScreenDate = DateTime.Now;
+                capture.IsSuccessSendToServer = false;
+
+                screenCaptureList.Add(capture);
+
+                SendScreenCapture(screenCaptureList);
+
+                screenCaptureList = new List<amCapture>();
+                //}
+                //else if (screenCaptureList.Count > 0)
+                //{
+                //    SendScreenCapture(screenCaptureList);
+                //    screenCaptureList = new List<amCapture>();
+                //}
             }
             catch (Exception ex)
             {
@@ -259,17 +306,6 @@ namespace amClient
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        //static async Task<amModel> GetMonitoringModelSampleData(string path)
-        //{
-        //    amModel monitor = null;
-        //    HttpResponseMessage response = await client.GetAsync(path);
-        //    if (response.IsSuccessStatusCode)
-        //    {
-        //        monitor = await response.Content.ReadAsAsync<List<amModel>>();
-        //    }
-        //    return monitor;
-        //}
-
         static async Task<Uri> SendMonitoringAsync(List<amModel> monitor)
         {
             HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessKeyLog", monitor);
@@ -278,21 +314,10 @@ namespace amClient
             return response.Headers.Location;
         }
 
-        static async Task<Uri> SendScreenCapture()
+        static async Task<Uri> SendScreenCapture(List<amCapture> screenMonitor)
         {
-            Int32 hwnd = 0;
-            hwnd = GetForegroundWindow();
-            string appProcessName = Process.GetProcessById(GetWindowProcessID(hwnd)).ProcessName;
 
-            var capture = new amCapture();
-            capture.amCaptureId = Guid.NewGuid().ToString();
-            capture.SessionID = 0;
-            capture.ActivityName = appProcessName;
-            capture.Image = new ScreenCapture().CaptureScreenByteArrayString(System.Drawing.Imaging.ImageFormat.Jpeg);
-            capture.CaptureScreenDate = DateTime.Now;
-            capture.IsSuccessSendToServer = false;
-
-            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessCaptureImage", capture);
+            HttpResponseMessage response = await client.PostAsJsonAsync("api/amController/ProcessCaptureImage", screenMonitor);
             response.EnsureSuccessStatusCode();
 
             return response.Headers.Location;

@@ -20,15 +20,19 @@ namespace amClient
         public byte[] CaptureScreenByteArrayString(ImageFormat format)
         {
             var image = CaptureWindow(User32.GetDesktopWindow());
+
+            //string testFileName = string.Format("D:/ImageFolderTest/{0}.{1}", Guid.NewGuid().ToString(), ImageFormat.Jpeg);
+            //image.Save(testFileName);
+
             using (MemoryStream ms = new MemoryStream())
             {
                 image.Save(ms, format);
                 byte[] imageBytes = ms.ToArray();
 
-                string base64String = Convert.ToBase64String(imageBytes);
-
-                //return base64String;
                 return imageBytes;
+
+                //string base64String = Convert.ToBase64String(imageBytes);
+                //return base64String;
             }
         }
 
