@@ -71,6 +71,8 @@
   <ItemGroup>
     <Compile Include="amCapture.cs" />
     <Compile Include="amModel.cs" />
+    <Compile Include="ModelKeyboardMouseLog.cs" />
+    <Compile Include="ModelScreenCapture.cs" />
     <Compile Include="ScreenCapture.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
